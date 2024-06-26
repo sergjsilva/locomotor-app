@@ -111,8 +111,7 @@ function loadExam(examId) {
   const keys = Object.keys(examsData); // keys=[exam01, exam02, ...]
   CURRENT_EXAM = examsData[keys[examId - 1]];
 
-  //TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
-  TOTAL_EXAM_QUESTIONS = 3;
+  TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
 
   trackExam(QUESTION_NUMBER);
   trackUserScore(USER_SCORE);
