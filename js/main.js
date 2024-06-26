@@ -105,7 +105,7 @@ resultBtn.addEventListener("click", (event) => {
 
   const examContent = document.querySelector("#exam-content");
   hideElement(examContent);
-
+  document.body.style.backgroundColor = "#fbfbfb";
   const scoreText = document.querySelector(".graphic-score-text");
   scoreText.textContent = `Has acertado ${USER_SCORE} de ${TOTAL_EXAM_QUESTIONS} preguntas`;
   /*drawResult();*/
