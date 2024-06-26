@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  height: 100%;
+  font-family: "Poppins", sans-serif;
+}
+
+.fixed-background {
+  height: 100vh;
+}
+/*  background-image: url(../images/x-ray.jpeg);
+  background-repeat: no-repeat;
+  background-position: right top; /* X-axis, Y-axis */
+/* background-attachment: fixed;
+  background-size: cover;
+}
+*/
+
+header {
+  color: white;
+  text-align: center;
+  font-family: "Teko", sans-serif;
+  font-size: 80px;
+}
+
+#grid-of-exams {
+  margin-top: 40px;
+  text-align: center;
+}
+
+#grid-of-exams .container.row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.exam-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.exam-options {
+  display: flex;
+  flex-direction: column;
+}
