@@ -97,7 +97,7 @@ resultBtn.addEventListener("click", (event) => {
   //Tells which exam user did
   const resultTextHeader = document.querySelector(".result-text-header");
   const headerMessage = document.querySelector(".header-message");
-  resultTextHeader.textContent = `Resultado - ${headerMessage.textContent}`;
+  resultTextHeader.innerHTML = `Resultado: <span class="fs-3 fst-italic">${headerMessage.textContent}</span>`;
 
   const resultContainer = document.querySelector(".result-container");
   displayElement(resultContainer);
@@ -111,7 +111,8 @@ function loadExam(examId) {
   const keys = Object.keys(examsData); // keys=[exam01, exam02, ...]
   CURRENT_EXAM = examsData[keys[examId - 1]];
 
-  TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
+  //TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
+  TOTAL_EXAM_QUESTIONS = 3;
 
   trackExam(QUESTION_NUMBER);
   trackUserScore(USER_SCORE);
@@ -154,7 +155,8 @@ function showQuestions(questionNumber) {
 
 function setMessageFromGrade(grade) {
   const percentValue = grade * 100;
-  setPercentVal(percentValue);
+
+  setPercentVal(percentValue.toFixed(1));
 
   let message = "";
 
