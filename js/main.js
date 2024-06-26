@@ -8,7 +8,6 @@ import {
   formatIncorrectAnswer,
   disableElement,
   enableElement,
-  setCircleProgress,
 } from "./utility.js";
 
 // HTML Queries
@@ -96,19 +95,15 @@ resultBtn.addEventListener("click", (event) => {
   hideElement(mainCointainer);
 
   //Tells which exam user did
-  const graphicMessage = document.querySelector(".graphic-header");
+  const resultTextHeader = document.querySelector(".result-text-header");
   const headerMessage = document.querySelector(".header-message");
-  graphicMessage.textContent = headerMessage.textContent;
+  resultTextHeader.textContent = `Resultado - ${headerMessage.textContent}`;
 
   const resultContainer = document.querySelector(".result-container");
   displayElement(resultContainer);
 
   const examContent = document.querySelector("#exam-content");
   hideElement(examContent);
-  document.body.style.backgroundColor = "#fbfbfb";
-  const scoreText = document.querySelector(".graphic-score-text");
-  scoreText.textContent = `Has acertado ${USER_SCORE} de ${TOTAL_EXAM_QUESTIONS} preguntas`;
-  /*drawResult();*/
 });
 
 function loadExam(examId) {
@@ -116,8 +111,7 @@ function loadExam(examId) {
   const keys = Object.keys(examsData); // keys=[exam01, exam02, ...]
   CURRENT_EXAM = examsData[keys[examId - 1]];
 
-  //  TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
-  TOTAL_EXAM_QUESTIONS = 5;
+  TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
 
   trackExam(QUESTION_NUMBER);
   trackUserScore(USER_SCORE);
@@ -156,18 +150,11 @@ function showQuestions(questionNumber) {
 
   options.innerHTML = optTags.join("");
   disableElement(nextBtn);
-
-  // Change the content
-  //questionText.textContent = `${counterVal}. ${CURRENT_QUESTION.text}`;
-  //optionContainer.innerHTML = optTag;
-
-  //resultBtn.style.visibility = "hidden";
 }
 
 function setMessageFromGrade(grade) {
   const percentValue = grade * 100;
-  console.log(percentValue);
-  setCircleProgress(percentValue);
+  setPercentVal(percentValue);
 
   let message = "";
 
@@ -186,9 +173,16 @@ function setMessageFromGrade(grade) {
     return;
   }
 
-  const titleMessage = document.querySelector(".result-title-message");
   const summaryMessage = document.querySelector(".result-summary");
 
-  titleMessage.textContent = message.gradeText;
+  const scoreText = document.querySelector(".score-text");
+
+  scoreText.innerHTML = `<span class="fw-bold">${message.gradeText}</span> ... Has acertado <span class="fw-bold"> ${USER_SCORE} de ${TOTAL_EXAM_QUESTIONS}</span> preguntas`;
   summaryMessage.textContent = message.comment;
+}
+
+function setPercentVal(percent) {
+  document.querySelector(
+    ".result-percent-value"
+  ).textContent = `Nota: ${percent}%`;
 }

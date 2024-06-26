@@ -50,39 +50,7 @@ header {
   flex-direction: column;
 }
 
-.progress-circle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-
-.progress-circle svg {
-  display: block;
-  margin: auto;
-  transform: rotate(-90deg);
-  transform-origin: center;
-}
-
-.progress-circle .circle {
-  stroke: forestgreen;
-  stroke-dasharray: 440;
-  stroke-dashoffset: calc(440 - (440 * var(--percent)) / 100);
-  stroke-width: 40;
-  fill: none;
-  transition: stroke-dashoffset 1s linear;
-}
-
-.progress-circle .background {
-  stroke: #e6e6e6;
-  stroke-width: 40;
-  fill: none;
-}
-
-.progress-circle .percentage-value {
-  position: absolute;
-  font-size: 24px;
-  font-weight: bold;
-  margin-top: 10px;
+.score-badge {
+  font-size: 1.8rem;
+  padding: 10px 20px;
 }

@@ -7,19 +7,17 @@ export const messagesData = [
   {
     grade: "sobresaliente",
     gradeText: "¡Buen trabajo!",
-    comment:
-      "Has demostrado un buen conocimiento, pero aún puedes perfeccionar...",
+    comment: "Has demostrado un buen conocimiento, pero aún puedes mejorar...",
   },
   {
     grade: "notable",
-    gradeText: "Has aprobado, pero hay margen para mejorar",
+    gradeText: "¡Aprobado!",
     comment:
       "Sigue esforzándote y revisa los conceptos en los que tienes dudas...",
   },
   {
     grade: "reprovado",
-    gradeText: "Lamentablemente, tu rendimiento ha sido insuficiente",
-    comment:
-      "Te recomendamos revisar los materiales y buscar ayuda adicional para mejorar...",
+    gradeText: "¡Rendimiento insuficiente!",
+    comment: "Revise los materiales y busque ayuda adicional para mejorar...",
   },
 ];
