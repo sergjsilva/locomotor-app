@@ -1,4 +1,5 @@
 import { examsData } from "../db/db.js";
+import { messagesData } from "../db/messagesDb.js";
 import {
   displayElement,
   hideElement,
@@ -7,6 +8,7 @@ import {
   formatIncorrectAnswer,
   disableElement,
   enableElement,
+  setCircleProgress,
 } from "./utility.js";
 
 // HTML Queries
@@ -30,6 +32,7 @@ examGrid.addEventListener("click", (event) => {
 
   const examContent = document.querySelector("#exam-content");
   const initialMessage = document.querySelector(".exam-message");
+
   const headerMessage = document.querySelector(".header-message");
   headerMessage.textContent = event.target.getAttribute("message");
   headerMessage.classList.remove("text-success");
@@ -38,19 +41,15 @@ examGrid.addEventListener("click", (event) => {
   hideElement(initialMessage);
   hideElement(examGrid);
   hideElement(resultBtn);
+
   displayElement(examContent);
 });
 
 nextBtn.addEventListener("click", (event) => {
   if (QUESTION_NUMBER <= TOTAL_EXAM_QUESTIONS) {
-    //hideElement(nextBtn);
-
     trackExam(QUESTION_NUMBER);
     trackUserScore(USER_SCORE);
     showQuestions(QUESTION_NUMBER);
-  } else {
-    hideElement(nextBtn);
-    displayElement(resultBtn);
   }
 });
 
@@ -61,9 +60,6 @@ options.addEventListener("click", (event) => {
   if (event.target.tagName === "BUTTON" || event.target.tagName == "SPAN") {
     const selectedOption = event.target.closest(".option");
     const selectedOptionName = selectedOption.getAttribute("name");
-
-    console.log("CORRECT: " + CURRENT_QUESTION.correctAnswer);
-    console.log("SELECTED: " + selectedOptionName);
 
     if (selectedOptionName === CURRENT_QUESTION.correctAnswer) {
       USER_SCORE++;
@@ -84,19 +80,35 @@ options.addEventListener("click", (event) => {
     for (let i = 0; i < totalOptions; i++) {
       disableElement(options.children[i]);
     }
-    if (CURRENT_QUESTION_INDEX < TOTAL_EXAM_QUESTIONS) {
+    if (QUESTION_NUMBER <= TOTAL_EXAM_QUESTIONS) {
       enableElement(nextBtn);
     } else {
-      resultBtn.classList.remove("btn-secondary");
-      resultBtn.classList.add("btn-success");
-      resultBtn.style.visibility = "visible";
-      nextBtn.style.visibility = "hidden";
-      const grade = (USER_SCORE / TOTAL_EXAM_QUESTIONS) * 10;
-      getMessageFromScore(grade);
+      hideElement(nextBtn);
+      displayElement(resultBtn);
+      const grade = USER_SCORE / TOTAL_EXAM_QUESTIONS;
+      setMessageFromGrade(grade);
     }
-  } else {
-    console.log("NOT CLICKED");
   }
+});
+
+resultBtn.addEventListener("click", (event) => {
+  const mainCointainer = document.querySelector(".fixed-background");
+  hideElement(mainCointainer);
+
+  //Tells which exam user did
+  const graphicMessage = document.querySelector(".graphic-header");
+  const headerMessage = document.querySelector(".header-message");
+  graphicMessage.textContent = headerMessage.textContent;
+
+  const resultContainer = document.querySelector(".result-container");
+  displayElement(resultContainer);
+
+  const examContent = document.querySelector("#exam-content");
+  hideElement(examContent);
+
+  const scoreText = document.querySelector(".graphic-score-text");
+  scoreText.textContent = `Has acertado ${USER_SCORE} de ${TOTAL_EXAM_QUESTIONS} preguntas`;
+  /*drawResult();*/
 });
 
 function loadExam(examId) {
@@ -104,7 +116,8 @@ function loadExam(examId) {
   const keys = Object.keys(examsData); // keys=[exam01, exam02, ...]
   CURRENT_EXAM = examsData[keys[examId - 1]];
 
-  TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
+  //  TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
+  TOTAL_EXAM_QUESTIONS = 5;
 
   trackExam(QUESTION_NUMBER);
   trackUserScore(USER_SCORE);
@@ -149,4 +162,33 @@ function showQuestions(questionNumber) {
   //optionContainer.innerHTML = optTag;
 
   //resultBtn.style.visibility = "hidden";
+}
+
+function setMessageFromGrade(grade) {
+  const percentValue = grade * 100;
+  console.log(percentValue);
+  setCircleProgress(percentValue);
+
+  let message = "";
+
+  const score = grade * 10;
+
+  if (score < 5) {
+    message = messagesData.find((msg) => msg.grade === "reprovado");
+  } else if (score >= 5 && score <= 7.9) {
+    message = messagesData.find((msg) => msg.grade === "notable");
+  } else if (score >= 8 && score <= 8.9) {
+    message = messagesData.find((msg) => msg.grade === "sobresaliente");
+  } else if (score >= 9 && score <= 10) {
+    message = messagesData.find((msg) => msg.grade === "honor");
+  } else {
+    console.log("ERROR:: Invalid Data in function setMessageFromGrade!");
+    return;
+  }
+
+  const titleMessage = document.querySelector(".result-title-message");
+  const summaryMessage = document.querySelector(".result-summary");
+
+  titleMessage.textContent = message.gradeText;
+  summaryMessage.textContent = message.comment;
 }
