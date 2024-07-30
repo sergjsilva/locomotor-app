@@ -1,0 +1,13 @@
+.text-body-emphasis {
+  --bs-emphasis-color: #fff; /* Change emphasis color to white */
+}
+
+.feature-icon {
+  width: 4rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+}
+
+.nav-link.active {
+  --bs-navbar-active-color: #fff;
+}

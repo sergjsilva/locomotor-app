@@ -1,189 +1,562 @@
-import { examsData } from "../db/db.js";
-import { messagesData } from "../db/messagesDb.js";
-import {
-  displayElement,
-  hideElement,
-  getQuestionById,
-  formatCorrectAnswer,
-  formatIncorrectAnswer,
-  disableElement,
-  enableElement,
-} from "./utility.js";
+// User's Data declaration
+class UserData {
+  constructor() {
+    this.load();
+  }
 
-// HTML Queries
-const examGrid = document.querySelector("#grid-of-exams");
-const nextBtn = document.querySelector(".next-btn");
-const resultBtn = document.querySelector(".result-btn");
-const options = document.querySelector(".exam-options");
+  load() {
+    let loadedData =
+      JSON.parse(sessionStorage.getItem("userSessionData")) || {};
+    this.questionsBank = loadedData.questionsBank || [];
+    this.numberOfQuestions = loadedData.numberOfQuestions || 0;
+    this.examID = loadedData.examID || 0;
+    this.shouldRepeatExam = loadedData.shouldRepeatExam || false;
+    this.currentQuestionNumber = loadedData.currentQuestionNumber || 0;
+    this.targetQuestionNumber = loadedData.targetQuestionNumber || 0; // integer
+    this.userScore = loadedData.userScore || 0; // integer
+    this.currentQuestion = loadedData.currentQuestion || {}; // object
+    this.currentExam = loadedData.currentExam || []; // array of objects
+    this.userAnswers = loadedData.userAnswers || []; // array of chars
+  }
 
-// -- Global Variables
-let CURRENT_EXAM = [];
-let QUESTION_NUMBER = 0;
-let CURRENT_QUESTION = {};
-let TOTAL_EXAM_QUESTIONS = 0;
-let USER_SCORE = 0;
-let CURRENT_QUESTION_INDEX = 0;
-let ARRAY_OF_QUESTION_INDEX = Array.from({ length: 28 }, (v, i) => i);
+  save() {
+    sessionStorage.setItem("userSessionData", JSON.stringify(this));
+  }
 
-examGrid.addEventListener("click", (event) => {
-  const examId = event.target.getAttribute("value");
-  loadExam(examId);
+  setExamID(id) {
+    this.examID = id;
+    this.save();
+  }
 
-  const examContent = document.querySelector("#exam-content");
-  const initialMessage = document.querySelector(".exam-message");
+  setNumberOfQuestions(val) {
+    this.numberOfQuestions = val;
+    this.save();
+  }
+  setShouldRepeat(val) {
+    this.shouldRepeatExam = val;
+    this.save();
+  }
 
-  const headerMessage = document.querySelector(".header-message");
-  headerMessage.textContent = event.target.getAttribute("message");
-  headerMessage.classList.remove("text-success");
-  headerMessage.classList.add("text-light");
+  setCurrentQuestionNumber(n) {
+    this.currentQuestionNumber = n;
+    this.save();
+  }
 
-  hideElement(initialMessage);
-  hideElement(examGrid);
-  hideElement(resultBtn);
+  setTargetQuestionNumber(n) {
+    this.targetQuestionNumber = n;
+    this.save();
+  }
 
-  displayElement(examContent);
+  setUserScore(val) {
+    this.userScore = val;
+    this.save();
+  }
+
+  setCurrentQuestion(question) {
+    this.currentQuestion = question;
+    this.save();
+  }
+
+  setCurrentExam(exam) {
+    this.currentExam = exam;
+    this.save();
+  }
+  setUserAnswer(answers) {
+    this.userAnswers = answers;
+    this.save();
+  }
+}
+
+// Initialize global userData
+let userData = new UserData();
+
+// Button that controls number of question
+const buttonGroup = document.querySelectorAll(".dropdown-item");
+
+// Group of
+const examGroup = document.querySelectorAll(".clickable");
+
+// Group of options
+const optionsContainer = document.querySelector(".choice");
+
+// Example exams data
+const baseURL = "https://sergjsilva.github.io/anatomia-general-exam-data/";
+const examList = [
+  {
+    id: 1,
+    name: "Aparato Motor Inferior",
+    url: `${baseURL}exam01.json`,
+    questions: 28,
+  },
+  {
+    id: 2,
+    name: "Aparato Motor Superior",
+    url: `${baseURL}exam02.json`,
+    questions: 150,
+  },
+  {
+    id: 3,
+    name: "Aparato Motor Inferior",
+    url: `${baseURL}exam03.json`,
+    questions: 30,
+  },
+];
+
+const forwardBtn = document.querySelector(".right-arrow");
+const backwardBtn = document.querySelector(".left-arrow");
+const finalResultContainer = document.querySelector(".final-result");
+const viewResultIcon = document.querySelector("#view-results");
+const loader = document.querySelector("#loader");
+const repeatBtn = document.querySelector("#repeat-button");
+const reloadBtn = document.querySelector("#reload-button");
+
+// --------------------
+// Variables
+// --------------------
+
+const NOT_ANSWERED = "z";
+
+// Should run the program if user's selected the number of questions
+let hasSelectedNumOfQuestion = false;
+//let numberOfQuestions = 0;
+let examQuestionBank = [];
+let currentExam = [];
+
+// // Keep track of this quiz variables
+// let currentQuestionNumber = 0; // Tracks the current question number
+// let targetQuestionNumber = 0; // Tracks the question user wants to show
+
+// let userScore = 0;
+// let currentQuestion = {};
+//let userAnswers = [];
+
+// ------------------
+// Helper Functions
+// ------------------
+function isButtonActive(element) {
+  return element.classList.contains("btn-light");
+}
+
+function getButtonByName(nameValue) {
+  return optionsContainer.querySelector(`button[name="${nameValue}"]`);
+}
+
+function createArray(sizeofArray) {
+  return Array.from({ length: sizeofArray }, (_, i) => i + 1);
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]]; // Troca os elementos
+  }
+  return array;
+}
+
+function createQuestionsArray(
+  totalQuestionsInDatabase,
+  totalOfQuestionsOnMyExam
+) {
+  // Create an array with all IDs
+  let arrayWithAllIds = createArray(totalQuestionsInDatabase);
+
+  // Shuffled array
+  let shuffledArray = shuffleArray(arrayWithAllIds);
+
+  // Seleciona os IDs do array embaralhado
+  return shuffledArray.slice(0, totalOfQuestionsOnMyExam);
+}
+
+function updateQuizScoreInfo() {
+  const currentQuestText = document.querySelector("#ques-left");
+  const currentScoreText = document.querySelector("#score");
+
+  currentQuestText.textContent = `Pregunta: ${userData.targetQuestionNumber}/${userData.numberOfQuestions}`;
+  currentScoreText.textContent = `Acertos: ${userData.userScore}`;
+}
+
+function toggleArrowState(button, action) {
+  if (action === "activate") {
+    button.classList.remove("deactivated");
+    button.classList.add("activated");
+  } else if (action === "deactivate") {
+    button.classList.remove("activated");
+    button.classList.add("deactivated");
+  }
+}
+
+function disableElement(element) {
+  element.disabled = true;
+}
+
+function formatCorrectAnswer(element) {
+  if (isButtonActive(element)) {
+    element.classList.remove("btn-light");
+    element.classList.add("btn-success");
+  }
+}
+
+function formatIncorrectAnswer(element) {
+  if (isButtonActive(element)) {
+    element.classList.remove("btn-light");
+    element.classList.add("btn", "btn-danger");
+  }
+}
+
+function handleSelectedOption(answer, buttonPressed, isTakingTest) {
+  const numberOfOptions = userData.currentQuestion.options.length;
+
+  if (answer === userData.currentQuestion.correctAnswer) {
+    if (isTakingTest) {
+      userData.userScore++;
+      userData.save();
+    }
+    updateQuizScoreInfo();
+    formatCorrectAnswer(buttonPressed);
+  } else {
+    formatIncorrectAnswer(buttonPressed);
+    // Loop through all questions to find the correct one
+    for (let i = 0; i < numberOfOptions; i++) {
+      const checkThisOption = optionsContainer.children[i].getAttribute("name");
+      if (checkThisOption === userData.currentQuestion.correctAnswer) {
+        formatCorrectAnswer(optionsContainer.children[i]);
+      }
+    } // end for
+  } // end else
+
+  // Disable all elements
+  for (let i = 0; i < numberOfOptions; i++) {
+    disableElement(optionsContainer.children[i]);
+  }
+
+  if (userData.targetQuestionNumber < userData.numberOfQuestions) {
+    toggleArrowState(forwardBtn, "activate");
+  } else {
+    toggleArrowState(forwardBtn, "deactivate");
+  }
+}
+
+function hasUserAnsweredAllQuestions() {
+  return !userData.userAnswers.includes(NOT_ANSWERED);
+}
+
+// --------------
+// Functions
+// --------------
+function handleForwardButton(questionNumber) {
+  if (
+    questionNumber === userData.currentQuestionNumber && // we are in current question
+    userData.userAnswers[questionNumber - 1] === NOT_ANSWERED // current question was not answered
+  ) {
+    toggleArrowState(forwardBtn, "deactivate");
+  } else {
+    toggleArrowState(forwardBtn, "activate");
+  }
+}
+
+function handleBackwardButton(questionNumber) {
+  if (questionNumber > 1) {
+    toggleArrowState(backwardBtn, "activate");
+  } else {
+    toggleArrowState(backwardBtn, "deactivate");
+  }
+}
+
+function showQuestion(number) {
+  const introContainer = document.querySelector(".intro-container");
+  const quizContainer = document.querySelector(".quiz-container");
+
+  introContainer.hidden = true;
+  quizContainer.hidden = false;
+  loader.hidden = true;
+
+  updateQuizScoreInfo();
+
+  handleForwardButton(userData.targetQuestionNumber);
+
+  handleBackwardButton(number);
+
+  // Find question text at quiz box
+  const questionText = document.querySelector(".question");
+
+  userData.setCurrentQuestion(userData.currentExam[number - 1]);
+
+  const numberOfOptions = userData.currentQuestion.options.length;
+  const optionIcon = [
+    `<img src="./assets/option-a-circle.svg" width="32" height="32">`,
+    `<img src="./assets/option-b-circle.svg" width="32" height="32">`,
+    `<img src="./assets/option-c-circle.svg" width="32" height="32">`,
+    `<img src="./assets/option-d-circle.svg" width="32" height="32">`,
+    `<img src="./assets/option-e-circle.svg" width="32" height="32">`,
+    `<img src="./assets/option-f-circle.svg" width="32" height="32">`,
+  ];
+  const optionNames = ["A", "B", "C", "D", "E", "F"];
+  let optTags = [];
+
+  for (let i = 0; i < numberOfOptions && i < optionNames.length; i++) {
+    optTags.push(
+      `<button class="option text-start mb-2 btn btn-light" name=${optionNames[i]}>
+                <span>${optionIcon[i]} ${userData.currentQuestion.options[i]}</span>
+              </button>`
+    );
+  }
+  // Change the content
+  questionText.innerHTML = `<h3>${number}. ${userData.currentQuestion.text}</h3>`;
+  optionsContainer.innerHTML = optTags.join("");
+}
+
+function createExam() {
+  // const introContainer = document.querySelector(".intro-container");
+  // const quizContainer = document.querySelector(".quiz-container");
+
+  // introContainer.hidden = true;
+  // quizContainer.hidden = false;
+
+  // exam questions
+  userData.setNumberOfQuestions(
+    userData.numberOfQuestions < 0
+      ? userData.questionsBank.length
+      : userData.numberOfQuestions
+  );
+
+  // stores indices of bank questions ..ex:2-4-5-7-9 .. exam with 5 questions
+  const examIndicesArray = createQuestionsArray(
+    userData.questionsBank.length,
+    userData.numberOfQuestions
+  );
+
+  //initialize array with not answered value
+  userData.setUserAnswer(
+    new Array(userData.numberOfQuestions).fill(NOT_ANSWERED)
+  );
+
+  userData.setCurrentQuestionNumber(1);
+  userData.setTargetQuestionNumber(1);
+  userData.setUserScore(0);
+
+  for (let i = 0; i < examIndicesArray.length; i++) {
+    currentExam.push(userData.questionsBank[examIndicesArray[i] - 1]);
+  }
+  userData.setCurrentExam(currentExam);
+  // need create function Select Questions from Bank
+  // loader.hidden = true;
+  showQuestion(userData.targetQuestionNumber);
+}
+
+async function loadExam(examNumber) {
+  const URL = examList[examNumber - 1].url;
+
+  try {
+    const response = await fetch(URL);
+    if (!response.ok) {
+      throw new Error("Problems with network response...");
+    }
+    //examQuestionBank = await response.json();
+    userData.questionsBank = await response.json();
+    userData.save();
+  } catch (error) {
+    console.error("ERROR::: fetching data:", error);
+  }
+
+  // Create Exam
+
+  createExam();
+}
+
+// --------------------
+// Listeners Functions
+// --------------------
+
+viewResultIcon.addEventListener("click", (event) => {
+  const quizContainer = document.querySelector(".quiz-container");
+  quizContainer.hidden = true;
+  finalResultContainer.hidden = false;
+
+  // Calculate Average
+  const grade = (userData.userScore / userData.numberOfQuestions).toFixed(3); //ex:0.714
+  const percentPoints = (grade * 100).toFixed(1); //ex:71.4
+  const correctIncorrectMsg = finalResultContainer.querySelector(
+    "#correct-incorrect-answers"
+  );
+  const finalScoreMsg = finalResultContainer.querySelector("#final-score-msg");
+  const finalGreeting = finalResultContainer.querySelector("#final-greeting");
+
+  const solvedQuestMsg =
+    finalResultContainer.querySelector("#solved-quest-msg");
+  const gradeImg = finalResultContainer.querySelector("#grade-img");
+  const comments = finalResultContainer.querySelector("#comments");
+
+  const examName = examList.find(({ id }) => id == userData.examID).name;
+  const url = "./assets";
+  let results = [
+    {
+      message: "¡Excelente!",
+      url: "/ico-trophy.png",
+      comment: "Sigue así y continúa con tu gran desempeño...",
+    },
+    {
+      message: "¡Buen Trabajo!",
+      url: "/ico-good-job.png",
+      comment:
+        "Has demostrado un buen conocimiento, pero aún puedes mejorar...",
+    },
+    {
+      message: "¡Aprobado!",
+      url: "/ico-pass.png",
+      comment:
+        "Sigue esforzándote y revisa los conceptos en los que tienes dudas...",
+    },
+    {
+      message: "¡Rendimiento insuficiente!",
+      url: "/ico-failed.png",
+      comment: "Revise los materiales y busque ayuda adicional para mejorar...",
+    },
+  ];
+  const index =
+    percentPoints >= 90
+      ? 0
+      : percentPoints >= 70
+      ? 1
+      : percentPoints >= 50
+      ? 2
+      : 3;
+
+  const result = results[index];
+
+  gradeImg.setAttribute("src", url + result.url);
+  finalGreeting.textContent = result.message;
+
+  // Comments
+  if (index == 3) {
+    comments.classList.add("alert-danger");
+  } else {
+    comments.classList.add("alert-info");
+  }
+
+  comments.textContent = result.comment;
+
+  correctIncorrectMsg.textContent = `${userData.userScore} fueron correctas y ${
+    userData.numberOfQuestions - userData.userScore
+  } fueron incorrectas`;
+
+  solvedQuestMsg.textContent = `Has resuelto ${userData.numberOfQuestions} preguntas de ${examName}`;
+  finalScoreMsg.textContent = `Tu puntuación final es: ${percentPoints}%`;
 });
 
-nextBtn.addEventListener("click", (event) => {
-  if (QUESTION_NUMBER <= TOTAL_EXAM_QUESTIONS) {
-    trackExam(QUESTION_NUMBER);
-    trackUserScore(USER_SCORE);
-    showQuestions(QUESTION_NUMBER);
+forwardBtn.addEventListener("click", (event) => {
+  userData.targetQuestionNumber++;
+  userData.save();
+  showQuestion(userData.targetQuestionNumber);
+
+  if (userData.currentQuestionNumber < userData.targetQuestionNumber) {
+    // Enter here when it is doing normal test
+    userData.setCurrentQuestionNumber(userData.targetQuestionNumber);
+    toggleArrowState(forwardBtn, "deactivate");
+  } else {
+    // User could already answer the question we must know
+    const userOption = userData.userAnswers[userData.targetQuestionNumber - 1];
+    if (userOption === NOT_ANSWERED) {
+      toggleArrowState(forwardBtn, "deactivate");
+    } else {
+      const buttonPressed = getButtonByName(userOption);
+      handleSelectedOption(userOption, buttonPressed, false);
+    }
   }
 });
 
-// The user selected an option
-options.addEventListener("click", (event) => {
-  const totalOptions = CURRENT_QUESTION.options.length;
+backwardBtn.addEventListener("click", (event) => {
+  userData.targetQuestionNumber--;
+  userData.save();
+  showQuestion(userData.targetQuestionNumber);
+  toggleArrowState(forwardBtn, "activate");
 
+  const userOption = userData.userAnswers[userData.targetQuestionNumber - 1];
+  const buttonPressed = getButtonByName(userOption);
+  handleSelectedOption(userOption, buttonPressed, false);
+});
+
+buttonGroup.forEach((item) => {
+  item.addEventListener("click", (event) => {
+    //prevent the default action associated with anchor element
+    event.preventDefault();
+
+    // numberOfQuestions = parseInt(event.target.getAttribute("data-value"));
+
+    userData.setNumberOfQuestions(
+      parseInt(event.target.getAttribute("data-value"))
+    );
+    const buttonElement = document.querySelector("#msg-total-questions");
+
+    if (userData.numberOfQuestions < 0) {
+      buttonElement.textContent = "Examen Completo";
+    } else {
+      buttonElement.textContent = `${userData.numberOfQuestions} preguntas`;
+    }
+    hasSelectedNumOfQuestion = true;
+  });
+});
+
+examGroup.forEach((item) => {
+  item.addEventListener("click", (event) => {
+    userData.setExamID(item.getAttribute("exam-value"));
+
+    if (hasSelectedNumOfQuestion) {
+      loader.hidden = false;
+      loadExam(userData.examID);
+    } else {
+      console.log(
+        "ALERT:: Seleccione primero el numero de preguntas para tu test"
+      );
+    }
+
+    // Add your logic to handle the exam value here
+  });
+});
+
+optionsContainer.addEventListener("click", (event) => {
   if (event.target.tagName === "BUTTON" || event.target.tagName == "SPAN") {
     const selectedOption = event.target.closest(".option");
     const selectedOptionName = selectedOption.getAttribute("name");
 
-    if (selectedOptionName === CURRENT_QUESTION.correctAnswer) {
-      USER_SCORE++;
-      trackUserScore(USER_SCORE);
-      formatCorrectAnswer(selectedOption);
-    } else {
-      formatIncorrectAnswer(selectedOption);
-      for (let i = 0; i < totalOptions; i++) {
-        if (
-          options.children[i].getAttribute("name") ===
-          CURRENT_QUESTION.correctAnswer
-        ) {
-          formatCorrectAnswer(options.children[i]);
-        }
-      }
-    }
+    //store user answer
+    userData.userAnswers[userData.targetQuestionNumber - 1] =
+      selectedOptionName;
+    userData.save();
 
-    for (let i = 0; i < totalOptions; i++) {
-      disableElement(options.children[i]);
-    }
-    if (QUESTION_NUMBER <= TOTAL_EXAM_QUESTIONS) {
-      enableElement(nextBtn);
-    } else {
-      hideElement(nextBtn);
-      displayElement(resultBtn);
-      const grade = USER_SCORE / TOTAL_EXAM_QUESTIONS;
-      setMessageFromGrade(grade);
+    // handle user answer .. true = user is taking test. Not navigating
+    handleSelectedOption(selectedOptionName, selectedOption, true);
+    if (hasUserAnsweredAllQuestions()) {
+      viewResultIcon.hidden = false;
     }
   }
 });
 
-resultBtn.addEventListener("click", (event) => {
-  const mainCointainer = document.querySelector(".fixed-background");
-  hideElement(mainCointainer);
-
-  //Tells which exam user did
-  const resultTextHeader = document.querySelector(".result-text-header");
-  const headerMessage = document.querySelector(".header-message");
-  resultTextHeader.innerHTML = `Resultado: <span class="fs-3 fst-italic">${headerMessage.textContent}</span>`;
-
-  const resultContainer = document.querySelector(".result-container");
-  displayElement(resultContainer);
-
-  const examContent = document.querySelector("#exam-content");
-  hideElement(examContent);
+reloadBtn.addEventListener("click", () => {
+  sessionStorage.removeItem("userSessionData");
 });
 
-function loadExam(examId) {
-  QUESTION_NUMBER = 1;
-  const keys = Object.keys(examsData); // keys=[exam01, exam02, ...]
-  CURRENT_EXAM = examsData[keys[examId - 1]];
+repeatBtn.addEventListener("click", () => {
+  userData.setShouldRepeat(true);
+});
 
-  TOTAL_EXAM_QUESTIONS = CURRENT_EXAM.length;
+// On load
+window.addEventListener("load", () => {
+  userData.load();
 
-  trackExam(QUESTION_NUMBER);
-  trackUserScore(USER_SCORE);
-  showQuestions(QUESTION_NUMBER);
-}
+  if (userData.questionsBank.length > 0 && userData.shouldRepeatExam) {
+    userData.setShouldRepeat(false);
 
-function trackUserScore(score) {
-  const userScoreText = document.querySelector(".user-score");
-  userScoreText.textContent = `Acertos: ${score}/${TOTAL_EXAM_QUESTIONS}`;
-}
+    createExam();
+  } else if (userData.questionsBank.length > 0 && !userData.shouldRepeatExam) {
+    //  userData.load();
+    showQuestion(userData.targetQuestionNumber);
 
-function trackExam(questionNumber) {
-  const examTrack = document.querySelector(".exam-track");
-  examTrack.textContent = `Pregunta ${QUESTION_NUMBER} de ${TOTAL_EXAM_QUESTIONS}`;
-}
-
-function showQuestions(questionNumber) {
-  //let id = ARRAY_OF_QUESTION_INDEX[currentId];
-
-  CURRENT_QUESTION = getQuestionById(CURRENT_EXAM, questionNumber);
-  const totalOptions = CURRENT_QUESTION.options.length;
-
-  const optionNames = ["A", "B", "C", "D", "E", "F"];
-  let optTags = [];
-
-  for (let i = 0; i < totalOptions && i < optionNames.length; i++) {
-    optTags.push(`<button class="option text-start mb-3 btn btn-outline-secondary" name=${optionNames[i]}>
-                <span>${optionNames[i]}. ${CURRENT_QUESTION.options[i]}
-              </button>`);
+    const userOption = userData.userAnswers[userData.targetQuestionNumber - 1];
+    if (userOption === NOT_ANSWERED) {
+      // toggleArrowState(forwardBtn, "deactivate");
+    } else {
+      const buttonPressed = getButtonByName(userOption);
+      handleSelectedOption(userOption, buttonPressed, false);
+    }
   }
-
-  const examTitle = document.querySelector(".exam-title");
-
-  examTitle.textContent = `${QUESTION_NUMBER}. ${CURRENT_QUESTION.text}`;
-  QUESTION_NUMBER++;
-
-  options.innerHTML = optTags.join("");
-  disableElement(nextBtn);
-}
-
-function setMessageFromGrade(grade) {
-  const percentValue = grade * 100;
-
-  setPercentVal(percentValue.toFixed(1));
-
-  let message = "";
-
-  const score = grade * 10;
-
-  if (score < 5) {
-    message = messagesData.find((msg) => msg.grade === "reprovado");
-  } else if (score >= 5 && score <= 7.9) {
-    message = messagesData.find((msg) => msg.grade === "notable");
-  } else if (score >= 8 && score <= 8.9) {
-    message = messagesData.find((msg) => msg.grade === "sobresaliente");
-  } else if (score >= 9 && score <= 10) {
-    message = messagesData.find((msg) => msg.grade === "honor");
-  } else {
-    console.log("ERROR:: Invalid Data in function setMessageFromGrade!");
-    return;
-  }
-
-  const summaryMessage = document.querySelector(".result-summary");
-
-  const scoreText = document.querySelector(".score-text");
-
-  scoreText.innerHTML = `<span class="fw-bold">${message.gradeText}</span> ... Has acertado <span class="fw-bold"> ${USER_SCORE} de ${TOTAL_EXAM_QUESTIONS}</span> preguntas`;
-  summaryMessage.textContent = message.comment;
-}
-
-function setPercentVal(percent) {
-  document.querySelector(
-    ".result-percent-value"
-  ).textContent = `Nota: ${percent}%`;
-}
+});
