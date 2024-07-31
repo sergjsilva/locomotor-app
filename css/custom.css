@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .text-body-emphasis {
   --bs-emphasis-color: #fff; /* Change emphasis color to white */
 }
@@ -11,3 +12,18 @@
 .nav-link.active {
   --bs-navbar-active-color: #fff;
 }
+=======
+.text-body-emphasis {
+  --bs-emphasis-color: #fff; /* Change emphasis color to white */
+}
+
+.feature-icon {
+  width: 4rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+}
+
+.nav-link.active {
+  --bs-navbar-active-color: #fff;
+}
+>>>>>>> d996ea5 (updating code)
