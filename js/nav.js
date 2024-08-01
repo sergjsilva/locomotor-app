@@ -7,7 +7,7 @@ if (path === "/" || path === "/index.html") {
   // Prepend "./" for consistency with href attributes
   path = `.${path}`;
 }
-
+console.log(path);
 const navbar = document.querySelector(".navbar-nav");
 let navLinks = navbar.querySelectorAll("a");
 
