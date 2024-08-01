@@ -13,11 +13,10 @@ let navLinks = navbar.querySelectorAll("a");
 
 navLinks.forEach((link) => {
   const href = link.getAttribute("href");
+  console.log(`href: ${href}    path:${path}`);
   if (href === path) {
     link.classList.add("active");
-    console.log(link);
   } else {
-   console.log("Passou");
     link.classList.remove("active");
   }
 });
