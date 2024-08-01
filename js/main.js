@@ -114,7 +114,7 @@ const viewResultIcon = document.querySelector("#view-results");
 const loader = document.querySelector("#loader");
 const repeatBtn = document.querySelector("#repeat-button");
 const reloadBtn = document.querySelector("#reload-button");
-
+const exitBtn = document.querySelector("#exit-test");
 // --------------------
 // Variables
 // --------------------
@@ -555,7 +555,6 @@ optionsContainer.addEventListener("click", (event) => {
     // handle user answer .. true = user is taking test. Not navigating
     handleSelectedOption(selectedOptionName, selectedOption, true);
     if (hasUserAnsweredAllQuestions()) {
-      const exitBtn = document.querySelector("#exit-test");
       exitBtn.style.display = "none";
       viewResultIcon.hidden = false;
     }
@@ -569,6 +568,11 @@ reloadBtn.addEventListener("click", () => {
 repeatBtn.addEventListener("click", () => {
   userData.setShouldRepeat(true);
   userData.setHasFinished(false);
+});
+
+exitBtn.addEventListener("click", () => {
+  sessionStorage.removeItem("userSessionData");
+  location.reload();
 });
 
 function handleUserOptions() {
@@ -588,7 +592,6 @@ function initializeExam() {
     // user do not requested. The page was reloaded
 
     if (!userData.hasFinished) {
-      const exitBtn = document.querySelector("#exit-test");
       exitBtn.style.display = "none";
       viewResultIcon.hidden = false;
       showQuestion(userData.targetQuestionNumber);
