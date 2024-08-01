@@ -15,6 +15,7 @@ navLinks.forEach((link) => {
   const href = link.getAttribute("href");
   if (href === path) {
     link.classList.add("active");
+    console.log(link);
   } else {
     link.classList.remove("active");
   }
