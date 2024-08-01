@@ -17,6 +17,7 @@ navLinks.forEach((link) => {
     link.classList.add("active");
     console.log(link);
   } else {
+    console.log("Nothig to say:", link);
     link.classList.remove("active");
   }
 });
