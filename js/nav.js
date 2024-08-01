@@ -1,5 +1,10 @@
 let path = window.location.pathname.split("/").pop();
-path = `./${path}`;
+
+if (path === "" || path === "/") {
+  path = "./index.html";
+} else {
+  path = `./${path}`;
+}
 
 const navbar = document.querySelector(".navbar-nav");
 let navLinks = navbar.querySelectorAll("a");
