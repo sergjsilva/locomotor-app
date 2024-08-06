@@ -18,49 +18,26 @@ body {
   color: #fff;
 }
 
+/* Loader */
 .loader {
   position: fixed;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.85);
 }
 
-.loader-items-container {
+.loader-item-container {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
-.loader-items-container img {
-  position: relative;
-  left: 25%;
-}
-
 .alert-message {
   position: relative;
   left: 25%;
   margin: 0;
-}
-
-.navbar {
-  background-color: blueviolet;
-  font-family: "Open Sans", sans-serif;
-  font-weight: 600;
-  margin-bottom: 0;
-}
-
-.navbar li {
-  display: inline-block;
-  margin-right: 30px;
-  padding: 15px;
-}
-
-.nav-link.active {
-  border-bottom: 5px solid #fff;
-  font-weight: 700;
 }
 
 .clickable {
